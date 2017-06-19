@@ -15,10 +15,10 @@ const messages = ruleMessages(ruleName, {
 });
 
 // Matches anything that looks like a number
-const RE_NUMERIC = /\d+|\.\d+|\d+.\d*/g;
+const RE_NUMERIC = /(?:[+-])?(?:\d+|\.\d+|\d+.\d*)/g;
 
 // Matches any space separated zeroes with optional unary operators
-const RE_NUMERIC_LIST = /\s*(?:[-+]?0[%a-z]*\s*)+/ig;
+const RE_NUMERIC_LIST = /\s*(?:0[%a-z]*\s*)+/ig;
 
 // Matches "0+0"
 const RE_BINARY_OPERATOR = /0[+-/*]0/g;
@@ -46,6 +46,19 @@ const isNumeric = value => {
 
 	// Not numeric.
 	return false;
+}
+
+const getReportIndex = decl => {
+	const str = decl.toString();
+	// Search for ":", starting right after the property name
+	RE_NUMERIC.lastIndex = str.indexOf(':', decl.prop.length);
+	const match = RE_NUMERIC.exec(str);
+	// Reset lastIndex
+	RE_NUMERIC.lastIndex = 0;
+	if (match) {
+		return match.index;
+	}
+	return 0;
 }
 
 const rule = stylelint.createPlugin(ruleName, function(primaryOption) {
@@ -77,6 +90,7 @@ const rule = stylelint.createPlugin(ruleName, function(primaryOption) {
 				report({
 					message: messages.rejected(decl.prop, decl.value),
 					node: decl,
+					index: getReportIndex(decl),
 					result,
 					ruleName,
 				});
