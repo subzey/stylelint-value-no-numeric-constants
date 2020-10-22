@@ -1,7 +1,7 @@
 'use strict';
 /* eslint-env node, es6 */
 
-const postcss = require("postcss");
+const postcss = require('postcss');
 const unprefixed = postcss.vendor.unprefixed;
 const stylelint = require('stylelint');
 const report = stylelint.utils.report;
@@ -24,7 +24,7 @@ const RE_NUMERIC_LIST = /\s*(?:0[%a-z]*\s*)+/ig;
 const RE_BINARY_OPERATOR = /0[+-/*]0/g;
 
 // Matches "(0), calc(0), -vendor-prefix-calc(0)"
-const RE_BRACES = /((\B-\w[a-z-]*-|\b)?calc)?\(0\)/ig
+const RE_BRACES = /((\B-\w[a-z-]*-|\b)?calc)?\(0\)/ig;
 
 const isNumeric = value => {
 	const result = (value
@@ -32,7 +32,7 @@ const isNumeric = value => {
 		.replace(RE_NUMERIC_LIST, '0')
 		.replace(RE_BINARY_OPERATOR, '0')
 		.replace(RE_BRACES, '0')
-	)
+	);
 
 	if (result === '0') {
 		// Result was simplified to 0. It's numeric
@@ -46,7 +46,7 @@ const isNumeric = value => {
 
 	// Not numeric.
 	return false;
-}
+};
 
 const getReportIndex = decl => {
 	const str = decl.toString();
@@ -59,17 +59,23 @@ const getReportIndex = decl => {
 		return match.index;
 	}
 	return 0;
-}
+};
 
 const rule = stylelint.createPlugin(ruleName, function(primaryOption) {
 	return (root, result) => {
 		const validOptions = validateOptions(result, ruleName, {
 			possible: (primaryOption) => (
-				Array.isArray(primaryOption)
+				typeof primaryOption === 'object'
 			&&
-				primaryOption.length > 0
+				Array.isArray(primaryOption.properties)
 			&&
-				primaryOption.every(value => typeof value === 'string')
+				primaryOption.properties.length > 0
+			&&
+				primaryOption.properties.every(value => typeof value === 'string')
+			&&
+				(primaryOption.allowGt === undefined || typeof primaryOption.allowGt === 'number')
+			&&
+				(primaryOption.allowLt === undefined || typeof primaryOption.allowLt === 'number')
 			),
 			actual: primaryOption
 		});
@@ -77,12 +83,19 @@ const rule = stylelint.createPlugin(ruleName, function(primaryOption) {
 			return;
 		}
 
-		const propertyNames = primaryOption.map(propName => unprefixed(propName).toLowerCase());
+		const propertyNames = primaryOption.properties.map(propName => unprefixed(propName).toLowerCase());
+		const isExistAllowRange = primaryOption.allowLt !== primaryOption.allowGt;
+		const allowLt = primaryOption.allowLt === undefined ? +Infinity : primaryOption.allowLt;
+		const allowGt = primaryOption.allowGt === undefined ? -Infinity : primaryOption.allowGt;
 
 		root.walkDecls((decl) => {
 			const propName = unprefixed(decl.prop).toLowerCase();
 
 			if (propertyNames.indexOf(propName) === -1) {
+				return;
+			}
+
+			if (isExistAllowRange && + decl.value < allowLt && + decl.value > allowGt) {
 				return;
 			}
 

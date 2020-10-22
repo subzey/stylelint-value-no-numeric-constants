@@ -1,6 +1,6 @@
 {
   "name": "stylelint-value-no-numeric-constants",
-  "version": "1.0.0-rc.3",
+  "version": "2.0.0-rc.1",
   "description": "Stylelint plugin that disallows constant numeric values for specified properties",
   "main": "value-no-numeric-constants.js",
   "author": "Anton Khlynovskiy <subzey@gmail.com>",
