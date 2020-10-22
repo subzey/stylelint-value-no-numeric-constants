@@ -7,8 +7,17 @@ Expressions in braces or within `calc()` that consists only of constant values a
 
 ## Options:
 
-Array of unprefixed property names (strings).
+```
+{
+	properties: string[];
+	allowGt:? number;
+	allowLt:? number;
+}
+```
 
+• `properties` is array of unprefixed property names.
+• `allowLt` is optional parameter, allow numeric literals lowest this.
+• `allowGt` is optional parameter, allow numeric literals greatest this.
 
 ## Sample configuration:
 
@@ -18,7 +27,7 @@ Array of unprefixed property names (strings).
 module.exports.plugins = ['stylelint-value-no-numeric-constants'];
 
 module.exports.rules = {
-	'tradingview/value-no-numeric-constants': [['order', 'z-index'], {
+	'tradingview/value-no-numeric-constants': [{ properties: ['order', 'z-index']}, {
 		severity: 'warning'
 	}],
 }
@@ -26,11 +35,13 @@ module.exports.rules = {
 
 ## Values that triggers errors:
 
-Given `z-index` and `width` are specified in config:
+Config: `{ properties: ['width', 'z-index'], allowGt: 50, allowLt: 100}`
 
 ```css
 z-index: 42;                        /* Error! Numeric constant. */
 z-index: 40 + 2;                    /* Error! Expression that consists only of numeric constants. */
+z-index: 50 + 2;                    /* Error! Allow range not consider simple expression. */
+z-index: calc(50 + 2);              /* Error! Allow range not consider calc expression. */
 z-index: (40 + 2);                  /* Error! Expression that consists only of numeric constants. And braces won't fool us. */
 z-index: calc(40 + 2);              /* Error! Calc expression that consists only of numeric constants. */
 width: calc(42% + 100px);           /* Error! Constants with units are still constants. */
@@ -41,9 +52,10 @@ z-index: -40 + -2.71;               /* Error! */
 
 ## OK values, that DOESN'T trigger errors:
 
-Given `z-index` is specified in config:
+Config: `{ properties: ['z-index'], allowLt: 10}`
 
 ```css
+z-index: 5;                  /* Okay. Allow lowest 10. */
 z-index: $my_z_index;        /* Okay. A SASS-like variable. That's the way we code! */
 z-index: @my_z_index;        /* Okay. A LESS-like variable. Yess! Variables everywhere! */
 z-index: #my_z_index;        /* Okay. We don't know what is it, but it's clearly not a numeric constant. */
